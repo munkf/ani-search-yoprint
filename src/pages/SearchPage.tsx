@@ -1,19 +1,22 @@
-import { useEffect } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useSearchParams } from 'react-router-dom';
-import { AlertCircle, Search as SearchIcon } from 'lucide-react';
+import { AlertCircle, Search as SearchIcon, Loader2 } from 'lucide-react';
 import { SearchBar } from '@/components/SearchBar';
 import { AnimeGrid } from '@/components/AnimeGrid';
 import { SkeletonGrid } from '@/components/SkeletonCard';
-import { Pagination } from '@/components/Pagination';
 import { Button } from '@/components/ui/button';
 import { useSearchAnimeQuery } from '@/features/jikan/jikanApi';
-import { selectSearchState, setQuery, setPage, setLimit, toggleSfw } from '@/features/search/searchSlice';
+import { selectSearchState, setQuery, setPage, setLimit, toggleSfw, setGenres, setYearRange, setScoreMin } from '@/features/search/searchSlice';
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
+import type { Anime } from '@/features/jikan/types';
 
 const SearchPage = () => {
   const dispatch = useDispatch();
   const [searchParams, setSearchParams] = useSearchParams();
   const searchState = useSelector(selectSearchState);
+  const [allAnime, setAllAnime] = useState<Anime[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
   
   // Sync URL params with Redux state on mount
   useEffect(() => {
@@ -21,34 +24,96 @@ const SearchPage = () => {
     const urlPage = parseInt(searchParams.get('page') || '1');
     const urlLimit = parseInt(searchParams.get('limit') || '24');
     const urlSfw = searchParams.get('sfw') !== 'false';
+    const urlGenres = searchParams.get('genres')?.split(',').map(Number).filter(Boolean) || [];
+    const urlYearMin = searchParams.get('yearMin') ? parseInt(searchParams.get('yearMin')!) : null;
+    const urlYearMax = searchParams.get('yearMax') ? parseInt(searchParams.get('yearMax')!) : null;
+    const urlScoreMin = searchParams.get('scoreMin') ? parseFloat(searchParams.get('scoreMin')!) : null;
 
     if (urlQuery !== searchState.query) dispatch(setQuery(urlQuery));
     if (urlPage !== searchState.page) dispatch(setPage(urlPage));
     if (urlLimit !== searchState.limit) dispatch(setLimit(urlLimit));
     if (urlSfw !== searchState.sfw) dispatch(toggleSfw());
+    if (JSON.stringify(urlGenres) !== JSON.stringify(searchState.genres)) dispatch(setGenres(urlGenres));
+    if (urlYearMin !== searchState.yearMin || urlYearMax !== searchState.yearMax) {
+      dispatch(setYearRange({ min: urlYearMin, max: urlYearMax }));
+    }
+    if (urlScoreMin !== searchState.scoreMin) dispatch(setScoreMin(urlScoreMin));
   }, []);
+
+  // Reset accumulated data when filters change
+  useEffect(() => {
+    setAllAnime([]);
+    setCurrentPage(1);
+  }, [searchState.query, searchState.genres, searchState.yearMin, searchState.yearMax, searchState.scoreMin, searchState.sfw]);
 
   // Update URL when state changes
   useEffect(() => {
     const params = new URLSearchParams();
     if (searchState.query) params.set('q', searchState.query);
-    params.set('page', searchState.page.toString());
+    params.set('page', currentPage.toString());
     params.set('limit', searchState.limit.toString());
     params.set('sfw', searchState.sfw.toString());
+    if (searchState.genres.length > 0) params.set('genres', searchState.genres.join(','));
+    if (searchState.yearMin) params.set('yearMin', searchState.yearMin.toString());
+    if (searchState.yearMax) params.set('yearMax', searchState.yearMax.toString());
+    if (searchState.scoreMin !== null) params.set('scoreMin', searchState.scoreMin.toString());
     setSearchParams(params, { replace: true });
-  }, [searchState, setSearchParams]);
+  }, [searchState, currentPage, setSearchParams]);
 
-  const { data, error, isLoading, isFetching } = useSearchAnimeQuery({
-    q: searchState.query,
-    page: searchState.page,
-    limit: searchState.limit,
-    sfw: searchState.sfw,
-  });
+  const queryParams = useMemo(() => {
+    const params: any = {
+      q: searchState.query,
+      page: currentPage,
+      limit: searchState.limit,
+      sfw: searchState.sfw,
+    };
+    
+    if (searchState.genres.length > 0) {
+      params.genres = searchState.genres.join(',');
+    }
+    
+    if (searchState.yearMin) {
+      params.start_date = `${searchState.yearMin}-01-01`;
+    }
+    
+    if (searchState.yearMax) {
+      params.end_date = `${searchState.yearMax}-12-31`;
+    }
+    
+    if (searchState.scoreMin !== null) {
+      params.min_score = searchState.scoreMin;
+    }
+    
+    return params;
+  }, [searchState, currentPage]);
 
-  const handlePageChange = (page: number) => {
-    dispatch(setPage(page));
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  const { data, error, isLoading, isFetching } = useSearchAnimeQuery(queryParams);
+
+  // Append new data to accumulated anime
+  useEffect(() => {
+    if (data?.data && !isLoading) {
+      setAllAnime(prev => {
+        if (currentPage === 1) return data.data;
+        const existingIds = new Set(prev.map(a => a.mal_id));
+        const newAnime = data.data.filter(a => !existingIds.has(a.mal_id));
+        return [...prev, ...newAnime];
+      });
+    }
+  }, [data, currentPage, isLoading]);
+
+  const hasMore = data?.pagination?.has_next_page || false;
+
+  const handleLoadMore = () => {
+    if (!isFetching && hasMore) {
+      setCurrentPage(prev => prev + 1);
+    }
   };
+
+  const { observerTarget } = useInfiniteScroll({
+    hasMore,
+    isLoading: isFetching,
+    onLoadMore: handleLoadMore,
+  });
 
   return (
     <div className="space-y-6">
@@ -67,9 +132,9 @@ const SearchPage = () => {
         </div>
       )}
       
-      {isLoading || isFetching ? (
+      {isLoading && allAnime.length === 0 ? (
         <SkeletonGrid />
-      ) : data?.data.length === 0 ? (
+      ) : allAnime.length === 0 && !isLoading ? (
         <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
           <SearchIcon className="h-20 w-20 text-muted-foreground mb-4 opacity-50" />
           <h3 className="text-2xl font-semibold mb-2">No Results Found</h3>
@@ -79,21 +144,29 @@ const SearchPage = () => {
               : 'Start searching for your favorite anime!'}
           </p>
         </div>
-      ) : data?.data ? (
+      ) : allAnime.length > 0 ? (
         <>
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-sm text-muted-foreground">
-              Found {data.pagination.items.total.toLocaleString()} results
-            </p>
-          </div>
-          <AnimeGrid anime={data.data} />
-          {data.pagination.last_visible_page > 1 && (
-            <Pagination
-              current={searchState.page}
-              totalPages={data.pagination.last_visible_page}
-              onChange={handlePageChange}
-            />
+          {data?.pagination && (
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm text-muted-foreground">
+                Showing {allAnime.length.toLocaleString()} of {data.pagination.items.total.toLocaleString()} results
+              </p>
+            </div>
           )}
+          <AnimeGrid anime={allAnime} />
+          
+          {/* Infinite scroll trigger */}
+          <div ref={observerTarget} className="py-8 flex justify-center">
+            {isFetching && (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span>Loading more...</span>
+              </div>
+            )}
+            {!hasMore && allAnime.length > 0 && (
+              <p className="text-sm text-muted-foreground">No more results</p>
+            )}
+          </div>
         </>
       ) : null}
     </div>

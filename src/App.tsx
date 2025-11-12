@@ -7,6 +7,7 @@ import { store } from "@/app/store";
 import { Layout } from "@/components/Layout";
 import SearchPage from "./pages/SearchPage";
 import AnimeDetailPage from "./pages/AnimeDetailPage";
+import FavoritesPage from "./pages/FavoritesPage";
 import NotFound from "./pages/NotFound";
 
 const App = () => (
@@ -19,6 +20,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Navigate to="/search" replace />} />
             <Route path="/search" element={<SearchPage />} />
+            <Route path="/favorites" element={<FavoritesPage />} />
             <Route path="/anime/:id" element={<AnimeDetailPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

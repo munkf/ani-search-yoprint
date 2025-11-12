@@ -82,4 +82,8 @@ export interface SearchParams {
   page?: number;
   limit?: number;
   sfw?: boolean;
+  genres?: string;
+  start_date?: string;
+  end_date?: string;
+  min_score?: number;
 }
