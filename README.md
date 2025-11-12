@@ -1,73 +1,141 @@
-# Welcome to your Lovable project
+# Anime Search App
 
-## Project info
+A beautiful, Crunchyroll-inspired single-page application for searching and discovering anime using the Jikan API (MyAnimeList). Built with React, TypeScript, Redux Toolkit, and Tailwind CSS.
 
-**URL**: https://lovable.dev/projects/bd51542a-86f9-4e3f-82a5-43af2744f513
+## ✨ Features
 
-## How can I edit this code?
+- 🔍 **Instant Search** - Debounced search with 400ms delay for optimal performance
+- 📱 **Responsive Design** - Beautiful on desktop, tablet, and mobile
+- 🎨 **Crunchyroll-Inspired UI** - Dark theme with vibrant orange accents
+- 📄 **Server-Side Pagination** - Efficient pagination using Jikan API data
+- 🔒 **SFW Toggle** - Filter safe-for-work content
+- 🎬 **Detailed Anime Pages** - View synopsis, trailers, genres, and more
+- ⚡ **Fast & Modern** - Built with Vite and optimized for performance
+- 🔄 **Redux State Management** - Predictable state with Redux Toolkit
+- 📊 **RTK Query** - Efficient data fetching with caching
 
-There are several ways of editing your application.
+## 🚀 Getting Started
 
-**Use Lovable**
+### Prerequisites
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/bd51542a-86f9-4e3f-82a5-43af2744f513) and start prompting.
+- Node.js (v16 or higher)
+- npm or yarn
 
-Changes made via Lovable will be committed automatically to this repo.
+### Installation
 
-**Use your preferred IDE**
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd anime-search-app
+```
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+2. Install dependencies:
+```bash
+npm install
+```
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+3. Start the development server:
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+The app will be available at `http://localhost:4000`
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Build for Production
 
-**Use GitHub Codespaces**
+```bash
+npm run build
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+The production-ready files will be in the `dist` directory.
 
-## What technologies are used for this project?
+## 🌐 Deployment
 
-This project is built with:
+### Netlify
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+1. Build the project: `npm run build`
+2. Deploy the `dist` folder to Netlify
+3. Configure SPA redirect: Create a `_redirects` file in `dist`:
+```
+/*    /index.html   200
+```
 
-## How can I deploy this project?
+### Vercel
 
-Simply open [Lovable](https://lovable.dev/projects/bd51542a-86f9-4e3f-82a5-43af2744f513) and click on Share -> Publish.
+1. Connect your repository to Vercel
+2. Set build command: `npm run build`
+3. Set output directory: `dist`
+4. Vercel automatically handles SPA routing
 
-## Can I connect a custom domain to my Lovable project?
+## 📁 Project Structure
 
-Yes, you can!
+```
+src/
+├── app/
+│   └── store.ts              # Redux store configuration
+├── components/
+│   ├── Layout.tsx            # Main layout with header
+│   ├── SearchBar.tsx         # Search input with SFW toggle
+│   ├── AnimeCard.tsx         # Anime card component
+│   ├── AnimeGrid.tsx         # Responsive grid layout
+│   ├── Pagination.tsx        # Pagination controls
+│   └── SkeletonCard.tsx      # Loading skeletons
+├── features/
+│   ├── jikan/
+│   │   ├── jikanApi.ts       # RTK Query API definition
+│   │   └── types.ts          # TypeScript types
+│   └── search/
+│       └── searchSlice.ts    # Search state management
+├── hooks/
+│   └── useDebounce.ts        # Debounce hook
+├── pages/
+│   ├── SearchPage.tsx        # Main search page
+│   ├── AnimeDetailPage.tsx   # Anime detail page
+│   └── NotFoundPage.tsx      # 404 page
+├── App.tsx                   # Main app component
+└── main.tsx                  # Entry point
+```
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## 🎨 Design System
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+The app uses a custom Crunchyroll-inspired dark theme:
+
+- **Background**: `#0B0C0F` (Deep black)
+- **Surface**: `#16181D` (Dark gray)
+- **Primary/Accent**: `#F47521` (Vibrant orange)
+- **Text**: `#E5E7EB` (Light gray)
+
+## 🔧 Technologies Used
+
+- **Framework**: React 18
+- **Language**: TypeScript
+- **Build Tool**: Vite
+- **State Management**: Redux Toolkit
+- **Data Fetching**: RTK Query
+- **Styling**: Tailwind CSS
+- **UI Components**: shadcn/ui
+- **Routing**: React Router v6
+- **Icons**: Lucide React
+- **API**: Jikan API v4 (MyAnimeList)
+
+## 📝 API Information
+
+This app uses the [Jikan API](https://jikan.moe/), an unofficial MyAnimeList API. Please note:
+
+- **Rate Limits**: The API has rate limits. The app implements debouncing and caching to minimize requests.
+- **Cache Duration**: RTK Query keeps unused data for 30 seconds to improve performance.
+- **Endpoint**: `https://api.jikan.moe/v4/`
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## 📄 License
+
+This project is open source and available under the MIT License.
+
+## 🙏 Acknowledgments
+
+- [Jikan API](https://jikan.moe/) for providing the MyAnimeList data
+- [Crunchyroll](https://www.crunchyroll.com/) for design inspiration
+- [MyAnimeList](https://myanimelist.net/) for anime data
