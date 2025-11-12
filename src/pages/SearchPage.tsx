@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useSearchParams } from 'react-router-dom';
 import { AlertCircle, Search as SearchIcon, Loader2 } from 'lucide-react';
-import { SearchBar } from '@/components/SearchBar';
+import { Banner } from '@/components/Banner';
 import { AnimeGrid } from '@/components/AnimeGrid';
 import { SkeletonGrid } from '@/components/SkeletonCard';
 import { Button } from '@/components/ui/button';
@@ -40,11 +40,28 @@ const SearchPage = () => {
     if (urlScoreMin !== searchState.scoreMin) dispatch(setScoreMin(urlScoreMin));
   }, []);
 
-  // Reset accumulated data when filters change
   useEffect(() => {
     setAllAnime([]);
     setCurrentPage(1);
-  }, [searchState.query, searchState.genres, searchState.yearMin, searchState.yearMax, searchState.scoreMin, searchState.sfw]);
+  }, [
+    searchState.query,
+    searchState.genres,
+    searchState.yearMin,
+    searchState.yearMax,
+    searchState.scoreMin,
+    searchState.sfw,
+    searchState.season,
+    searchState.format,
+    searchState.airingStatus,
+    searchState.streamingOn,
+    searchState.countryOfOrigin,
+    searchState.sourceMaterial,
+    searchState.episodesMin,
+    searchState.episodesMax,
+    searchState.durationMin,
+    searchState.durationMax,
+    searchState.doujin,
+  ]);
 
   // Update URL when state changes
   useEffect(() => {
@@ -116,59 +133,61 @@ const SearchPage = () => {
   });
 
   return (
-    <div className="space-y-6">
-      <SearchBar />
-      
-      {error && (
-        <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-          <AlertCircle className="h-16 w-16 text-destructive mb-4" />
-          <h3 className="text-xl font-semibold mb-2">Something went wrong</h3>
-          <p className="text-muted-foreground mb-4 max-w-md">
-            {(error as any)?.data?.message || 'Failed to fetch anime data. Please try again.'}
-          </p>
-          <Button onClick={() => window.location.reload()}>
-            Try Again
-          </Button>
-        </div>
-      )}
-      
-      {isLoading && allAnime.length === 0 ? (
-        <SkeletonGrid />
-      ) : allAnime.length === 0 && !isLoading ? (
-        <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
-          <SearchIcon className="h-20 w-20 text-muted-foreground mb-4 opacity-50" />
-          <h3 className="text-2xl font-semibold mb-2">No Results Found</h3>
-          <p className="text-muted-foreground max-w-md">
-            {searchState.query 
-              ? `No anime found matching "${searchState.query}". Try a different search term.`
-              : 'Start searching for your favorite anime!'}
-          </p>
-        </div>
-      ) : allAnime.length > 0 ? (
-        <>
-          {data?.pagination && (
-            <div className="flex items-center justify-between mb-4">
-              <p className="text-sm text-muted-foreground">
-                Showing {allAnime.length.toLocaleString()} of {data.pagination.items.total.toLocaleString()} results
-              </p>
-            </div>
-          )}
-          <AnimeGrid anime={allAnime} />
-          
-          {/* Infinite scroll trigger */}
-          <div ref={observerTarget} className="py-8 flex justify-center">
-            {isFetching && (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Loader2 className="h-5 w-5 animate-spin" />
-                <span>Loading more...</span>
+    <div className="space-y-12">
+      <Banner />
+
+      <section id="browse-section" className="space-y-6">
+        {error && (
+          <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+            <AlertCircle className="h-16 w-16 text-destructive mb-4" />
+            <h3 className="text-xl font-semibold mb-2">Something went wrong</h3>
+            <p className="text-muted-foreground mb-4 max-w-md">
+              {(error as any)?.data?.message || 'Failed to fetch anime data. Please try again.'}
+            </p>
+            <Button onClick={() => window.location.reload()}>
+              Try Again
+            </Button>
+          </div>
+        )}
+        
+        {isLoading && allAnime.length === 0 ? (
+          <SkeletonGrid />
+        ) : allAnime.length === 0 && !isLoading ? (
+          <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
+            <SearchIcon className="h-20 w-20 text-muted-foreground mb-4 opacity-50" />
+            <h3 className="text-2xl font-semibold mb-2">No Results Found</h3>
+            <p className="text-muted-foreground max-w-md">
+              {searchState.query 
+                ? `No anime found matching "${searchState.query}". Try a different search term.`
+                : 'Start searching for your favorite anime!'}
+            </p>
+          </div>
+        ) : allAnime.length > 0 ? (
+          <>
+            {data?.pagination && (
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-sm text-muted-foreground">
+                  Showing {allAnime.length.toLocaleString()} of {data.pagination.items.total.toLocaleString()} results
+                </p>
               </div>
             )}
-            {!hasMore && allAnime.length > 0 && (
-              <p className="text-sm text-muted-foreground">No more results</p>
-            )}
-          </div>
-        </>
-      ) : null}
+            <AnimeGrid anime={allAnime} />
+            
+            {/* Infinite scroll trigger */}
+            <div ref={observerTarget} className="py-8 flex justify-center">
+              {isFetching && (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <span>Loading more...</span>
+                </div>
+              )}
+              {!hasMore && allAnime.length > 0 && (
+                <p className="text-sm text-muted-foreground">No more results</p>
+              )}
+            </div>
+          </>
+        ) : null}
+      </section>
     </div>
   );
 };

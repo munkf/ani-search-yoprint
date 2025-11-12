@@ -20,7 +20,7 @@ export const Layout = ({ children }: LayoutProps) => {
             <Link to="/search" className="flex items-center gap-2 w-fit">
               <Film className="h-8 w-8 text-primary" />
               <span className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                AnimeSearch
+                AniSearch
               </span>
             </Link>
             <nav className="flex items-center gap-2">

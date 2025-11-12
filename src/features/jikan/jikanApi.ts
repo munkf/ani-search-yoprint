@@ -19,7 +19,34 @@ export const jikanApi = createApi({
     getAnimeById: builder.query<AnimeDetailResponse, number>({
       query: (id) => `/anime/${id}`,
     }),
+    getAnimeCharacters: builder.query<any, number>({
+      query: (id) => `/anime/${id}/characters`,
+    }),
+    getAnimeStaff: builder.query<any, number>({
+      query: (id) => `/anime/${id}/staff`,
+    }),
+    getAnimeRelations: builder.query<any, number>({
+      query: (id) => `/anime/${id}/relations`,
+    }),
+    getAnimeRecommendations: builder.query<any, number>({
+      query: (id) => `/anime/${id}/recommendations`,
+    }),
+    getAnimeStatistics: builder.query<any, number>({
+      query: (id) => `/anime/${id}/statistics`,
+    }),
+    getTopAnime: builder.query<SearchAnimeResponse, { limit?: number }>({
+      query: ({ limit = 25 }) => ({ url: '/top/anime', params: { limit } }),
+    }),
   }),
 });
 
-export const { useSearchAnimeQuery, useGetAnimeByIdQuery } = jikanApi;
+export const {
+  useSearchAnimeQuery,
+  useGetAnimeByIdQuery,
+  useGetAnimeCharactersQuery,
+  useGetAnimeStaffQuery,
+  useGetAnimeRelationsQuery,
+  useGetAnimeRecommendationsQuery,
+  useGetAnimeStatisticsQuery,
+  useGetTopAnimeQuery,
+} = jikanApi;

@@ -1,15 +1,21 @@
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Star, Calendar, Film, Tv, Play, ExternalLink, Clock, Users } from 'lucide-react';
-import { useGetAnimeByIdQuery } from '@/features/jikan/jikanApi';
+import { useGetAnimeByIdQuery, useGetAnimeCharactersQuery, useGetAnimeStaffQuery, useGetAnimeRelationsQuery, useGetAnimeRecommendationsQuery, useGetAnimeStatisticsQuery } from '@/features/jikan/jikanApi';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card } from '@/components/ui/card';
+import { AnimeGrid } from '@/components/AnimeGrid';
 
 const AnimeDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data, error, isLoading } = useGetAnimeByIdQuery(Number(id));
+  const { data: chars } = useGetAnimeCharactersQuery(Number(id));
+  const { data: staff } = useGetAnimeStaffQuery(Number(id));
+  const { data: relations } = useGetAnimeRelationsQuery(Number(id));
+  const { data: recs } = useGetAnimeRecommendationsQuery(Number(id));
+  const { data: stats } = useGetAnimeStatisticsQuery(Number(id));
 
   if (isLoading) {
     return (
@@ -211,6 +217,134 @@ const AnimeDetailPage = () => {
           )}
         </div>
       </div>
+
+      {/* Relations */}
+      {relations?.data?.length > 0 && (
+        <div className="space-y-3">
+          <h3 className="text-lg font-semibold">Relations</h3>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {relations.data.slice(0, 6).map((rel: any, idx: number) => (
+              <Card key={idx} className="p-4 border-border">
+                <div className="text-xs text-muted-foreground mb-1">{rel.relation}</div>
+                <div className="space-y-2">
+                  {rel.entry?.slice(0, 2).map((e: any) => (
+                    <Link key={e.mal_id} to={`/anime/${e.mal_id}`} className="block hover:underline">
+                      {e.name}
+                    </Link>
+                  ))}
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Characters */}
+      {chars?.data?.length > 0 && (
+        <div className="space-y-3">
+          <h3 className="text-lg font-semibold">Characters</h3>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {chars.data.slice(0, 9).map((c: any) => (
+              <Card key={c.character.mal_id} className="flex items-center gap-3 p-3 border-border">
+                <img
+                  src={c.character.images?.jpg?.image_url}
+                  alt={c.character.name}
+                  className="h-16 w-12 object-cover rounded"
+                />
+                <div className="min-w-0">
+                  <div className="font-medium truncate">{c.character.name}</div>
+                  <div className="text-xs text-muted-foreground">{c.role}</div>
+                  {c.voice_actors?.[0]?.person?.name && (
+                    <div className="text-xs mt-1">
+                      VA: <span className="text-muted-foreground">{c.voice_actors[0].person.name}</span>
+                    </div>
+                  )}
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Staff */}
+      {staff?.data?.length > 0 && (
+        <div className="space-y-3">
+          <h3 className="text-lg font-semibold">Staff</h3>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {staff.data.slice(0, 9).map((s: any) => (
+              <Card key={s.person.mal_id} className="flex items-center gap-3 p-3 border-border">
+                <img
+                  src={s.person.images?.jpg?.image_url}
+                  alt={s.person.name}
+                  className="h-16 w-16 rounded object-cover"
+                />
+                <div className="min-w-0">
+                  <div className="font-medium truncate">{s.person.name}</div>
+                  <div className="text-xs text-muted-foreground truncate">{s.positions?.join(', ')}</div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Statistics */}
+      {stats?.data && (
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold">Score Distribution</h3>
+          <div className="grid grid-cols-10 gap-2 items-end">
+            {Object.entries(stats.data.scores || {})
+              .sort(([a], [b]) => Number(a) - Number(b))
+              .map(([score, obj]: any) => (
+                <div key={score} className="flex flex-col items-center gap-1">
+                  <div
+                    className="w-6 bg-primary/80 rounded"
+                    style={{ height: `${Math.max(4, obj.percentage)}px` }}
+                    title={`${obj.votes} votes`}
+                  />
+                  <span className="text-xs text-muted-foreground">{score}</span>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
+
+      {/* Recommendations */}
+      {recs?.data?.length > 0 && (
+        <div className="space-y-3">
+          <h3 className="text-lg font-semibold">Recommendations</h3>
+          <AnimeGrid
+            anime={recs.data.slice(0, 12).map((r: any) => ({
+              ...r.entry,
+              mal_id: r.entry.mal_id,
+              images: { jpg: { image_url: r.entry.images?.jpg?.image_url, large_image_url: r.entry.images?.jpg?.image_url }, webp: { image_url: r.entry.images?.webp?.image_url, large_image_url: r.entry.images?.webp?.image_url } },
+              trailer: { youtube_id: null, url: null, embed_url: null },
+              title: r.entry.title,
+              type: null,
+              source: null,
+              episodes: null,
+              status: null,
+              airing: false,
+              aired: { from: null, to: null, string: '' },
+              duration: null,
+              rating: null,
+              score: null,
+              scored_by: null,
+              rank: null,
+              popularity: null,
+              members: null,
+              favorites: null,
+              synopsis: null,
+              background: null,
+              season: null,
+              year: null,
+              studios: [],
+              genres: [],
+              demographics: [],
+            })) as any}
+          />
+        </div>
+      )}
     </div>
   );
 };
