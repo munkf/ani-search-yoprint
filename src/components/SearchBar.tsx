@@ -3,7 +3,6 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Search, X, Filter, Shield, ShieldOff } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { setQuery, selectSearchState, toggleSfw } from '@/features/search/searchSlice';
 import { useDebounce } from '@/hooks/useDebounce';
 import { FilterPanel } from '@/components/FilterPanel';
@@ -32,97 +31,98 @@ export const SearchBar = ({ variant = 'default' }: SearchBarProps) => {
     dispatch(setQuery(''));
   };
 
-  const labelClasses =
-    variant === 'hero'
-      ? 'text-sm text-white/90'
-      : 'text-sm text-muted-foreground';
+  // Hero variant (banner search)
+  if (variant === 'hero') {
+    return (
+      <>
+        <div className="w-full space-y-8" data-search-bar>
+          <div className="flex flex-col gap-6 items-center justify-center">
+            {/* Search Input */}
+            <div className="w-full max-w-2xl">
+              <div className="relative group">
+                <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-white/50 group-focus-within:text-white/80 transition-colors" />
+                <Input
+                  type="text"
+                  placeholder=""
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  className="w-full pl-14 pr-12 h-16 bg-white/5 border border-white/10 text-white placeholder:text-white/40 rounded-xl backdrop-blur-sm shadow-2xl focus-visible:ring-0 focus-visible:border-white/30 transition-all hover:bg-white/8 text-lg"
+                />
+                {inputValue && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 h-8 w-8 p-0 hover:bg-white/10"
+                    onClick={handleClear}
+                  >
+                    <X className="h-5 w-5 text-white/70 hover:text-white" />
+                  </Button>
+                )}
+              </div>
+            </div>
 
-  const inputClasses =
-    variant === 'hero'
-      ? 'pl-12 pr-12 h-14 bg-white/10 border-white/20 text-white placeholder:text-white/70 backdrop-blur-sm shadow-lg focus-visible:ring-white/70'
-      : 'pl-10 pr-10 h-10 bg-card border-border focus-visible:ring-primary';
+            {/* Action Buttons */}
+            <div className="flex gap-3 items-center justify-center flex-wrap">
+              <Button
+                onClick={() => setIsFilterOpen(true)}
+                className="gap-2 h-12 px-6 text-base bg-primary hover:bg-primary/90 text-white rounded-lg font-medium shadow-lg transition-all hover:shadow-xl"
+              >
+                <Filter className="h-5 w-5" />
+                <span>Filters</span>
+              </Button>
 
-  const containerClasses =
-    variant === 'hero'
-      ? 'flex flex-wrap gap-3 items-end justify-center'
-      : 'flex flex-wrap gap-3 items-end';
-
-  const filterButtonVariant = variant === 'hero' ? 'default' : 'outline';
-  const filterButtonClasses =
-    variant === 'hero'
-      ? 'gap-2 h-14 px-6 text-base shadow-lg'
-      : 'gap-2 h-10';
-
-  const nsfwButtonClasses =
-    variant === 'hero'
-      ? 'gap-2 h-14 px-6 text-base shadow-lg'
-      : 'gap-2 h-10';
-
-  return (
-    <>
-      <div className={`space-y-4 ${variant === 'hero' ? 'text-white' : ''}`} data-search-bar>
-        <div className={containerClasses}>
-          <div className={`flex-1 ${variant === 'hero' ? 'min-w-[260px]' : 'min-w-[200px]'}`}>
-            <Label className={`mb-2 block ${labelClasses}`}>
-              Search
-            </Label>
-            <div className="relative">
-              <Search
-                className={`absolute ${variant === 'hero' ? 'left-4' : 'left-3'} top-1/2 -translate-y-1/2 h-5 w-5 ${
-                  variant === 'hero' ? 'text-white/70' : 'text-muted-foreground'
+              <Button
+                onClick={() => dispatch(toggleSfw())}
+                className={`gap-2 h-12 px-6 text-base rounded-lg font-medium transition-all ${
+                  sfw
+                    ? 'bg-white/10 hover:bg-white/20 text-white border border-white/20'
+                    : 'bg-primary hover:bg-primary/90 text-white'
                 }`}
-              />
-              <Input
-                type="text"
-                placeholder="Q"
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                className={inputClasses}
-              />
-              {inputValue && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={`absolute ${variant === 'hero' ? 'right-2' : 'right-1'} top-1/2 -translate-y-1/2 ${
-                    variant === 'hero' ? 'h-9 w-9' : 'h-8 w-8'
-                  } p-0`}
-                  onClick={handleClear}
-                >
-                  <X className={`h-4 w-4 ${variant === 'hero' ? 'text-white' : ''}`} />
-                </Button>
-              )}
+              >
+                {sfw ? (
+                  <>
+                    <Shield className="h-5 w-5" />
+                    <span>Safe</span>
+                  </>
+                ) : (
+                  <>
+                    <ShieldOff className="h-5 w-5" />
+                    <span>18+</span>
+                  </>
+                )}
+              </Button>
             </div>
           </div>
+        </div>
 
-          <div className="flex gap-2 items-end">
-            <Button
-              variant={filterButtonVariant}
-              onClick={() => setIsFilterOpen(true)}
-              className={filterButtonClasses}
-            >
-              <Filter className="h-4 w-4" />
-              <span>{variant === 'hero' ? 'Explore Filters' : 'Filters'}</span>
-            </Button>
+        <FilterPanel open={isFilterOpen} onOpenChange={setIsFilterOpen} />
+      </>
+    );
+  }
 
+  // Default variant (header search)
+  return (
+    <>
+      <div className="w-full" data-search-bar>
+        <div className="relative group">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60 group-focus-within:text-primary transition-colors" />
+          <Input
+            type="text"
+            placeholder=""
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            className="w-full pl-11 pr-10 h-11 bg-muted border border-border rounded-lg focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-transparent transition-all hover:bg-muted/80 placeholder:text-muted-foreground/50"
+          />
+          {inputValue && (
             <Button
-              variant={sfw ? "outline" : "default"}
+              variant="ghost"
               size="sm"
-              onClick={() => dispatch(toggleSfw())}
-              className={nsfwButtonClasses}
+              className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 p-0 hover:bg-muted"
+              onClick={handleClear}
             >
-              {sfw ? (
-                <>
-                  <Shield className="h-4 w-4" />
-                  <span className="hidden sm:inline">{variant === 'hero' ? 'Safe' : 'SFW'}</span>
-                </>
-              ) : (
-                <>
-                  <ShieldOff className="h-4 w-4" />
-                  <span className="hidden sm:inline">NSFW</span>
-                </>
-              )}
+              <X className="h-4 w-4 text-muted-foreground/60 hover:text-muted-foreground" />
             </Button>
-          </div>
+          )}
         </div>
       </div>
 

@@ -64,6 +64,10 @@ const searchSlice = createSlice({
       state.sfw = !state.sfw;
       state.page = 1; // Reset to first page on filter change
     },
+    setSfw: (state, action: PayloadAction<boolean>) => {
+      state.sfw = action.payload;
+      state.page = 1; // Reset to first page on filter change
+    },
     setGenres: (state, action: PayloadAction<number[]>) => {
       state.genres = action.payload;
       state.page = 1;
@@ -143,7 +147,8 @@ export const {
   setQuery, 
   setPage, 
   setLimit, 
-  toggleSfw, 
+  toggleSfw,
+  setSfw, 
   setGenres, 
   setYearRange, 
   setScoreMin, 

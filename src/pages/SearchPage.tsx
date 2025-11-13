@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useSearchParams } from 'react-router-dom';
 import { AlertCircle, Search as SearchIcon, Loader2 } from 'lucide-react';
@@ -7,7 +7,7 @@ import { AnimeGrid } from '@/components/AnimeGrid';
 import { SkeletonGrid } from '@/components/SkeletonCard';
 import { Button } from '@/components/ui/button';
 import { useSearchAnimeQuery } from '@/features/jikan/jikanApi';
-import { selectSearchState, setQuery, setPage, setLimit, toggleSfw, setGenres, setYearRange, setScoreMin } from '@/features/search/searchSlice';
+import { selectSearchState, setQuery, setPage, setLimit, setGenres, setYearRange, setScoreMin, setSfw, resetSearch } from '@/features/search/searchSlice';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import type { Anime } from '@/features/jikan/types';
 
@@ -16,10 +16,13 @@ const SearchPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const searchState = useSelector(selectSearchState);
   const [allAnime, setAllAnime] = useState<Anime[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
+  const hasInitialized = useRef(false);
   
-  // Sync URL params with Redux state on mount
+  // Sync URL params with Redux state on mount only (one time)
   useEffect(() => {
+    if (hasInitialized.current) return;
+    hasInitialized.current = true;
+
     const urlQuery = searchParams.get('q') || '';
     const urlPage = parseInt(searchParams.get('page') || '1');
     const urlLimit = parseInt(searchParams.get('limit') || '24');
@@ -29,20 +32,25 @@ const SearchPage = () => {
     const urlYearMax = searchParams.get('yearMax') ? parseInt(searchParams.get('yearMax')!) : null;
     const urlScoreMin = searchParams.get('scoreMin') ? parseFloat(searchParams.get('scoreMin')!) : null;
 
-    if (urlQuery !== searchState.query) dispatch(setQuery(urlQuery));
-    if (urlPage !== searchState.page) dispatch(setPage(urlPage));
-    if (urlLimit !== searchState.limit) dispatch(setLimit(urlLimit));
-    if (urlSfw !== searchState.sfw) dispatch(toggleSfw());
-    if (JSON.stringify(urlGenres) !== JSON.stringify(searchState.genres)) dispatch(setGenres(urlGenres));
-    if (urlYearMin !== searchState.yearMin || urlYearMax !== searchState.yearMax) {
-      dispatch(setYearRange({ min: urlYearMin, max: urlYearMax }));
+    // Build list of dispatches needed
+    const dispatches = [];
+    if (urlQuery !== '') dispatches.push(() => dispatch(setQuery(urlQuery)));
+    if (urlPage !== 1) dispatches.push(() => dispatch(setPage(urlPage)));
+    if (urlLimit !== 24) dispatches.push(() => dispatch(setLimit(urlLimit)));
+    if (urlSfw !== true) {
+      dispatches.push(() => dispatch(setSfw(urlSfw)));
     }
-    if (urlScoreMin !== searchState.scoreMin) dispatch(setScoreMin(urlScoreMin));
-  }, []);
+    if (urlGenres.length > 0) dispatches.push(() => dispatch(setGenres(urlGenres)));
+    if (urlYearMin || urlYearMax) dispatches.push(() => dispatch(setYearRange({ min: urlYearMin, max: urlYearMax })));
+    if (urlScoreMin !== null) dispatches.push(() => dispatch(setScoreMin(urlScoreMin)));
+
+    dispatches.forEach(d => d());
+  }, [dispatch, searchParams]);
 
   useEffect(() => {
     setAllAnime([]);
-    setCurrentPage(1);
+    // Ensure Redux page resets to first page when filters change so the query uses a single source of truth
+    dispatch(setPage(1));
   }, [
     searchState.query,
     searchState.genres,
@@ -61,13 +69,14 @@ const SearchPage = () => {
     searchState.durationMin,
     searchState.durationMax,
     searchState.doujin,
+    dispatch,
   ]);
 
   // Update URL when state changes
   useEffect(() => {
     const params = new URLSearchParams();
     if (searchState.query) params.set('q', searchState.query);
-    params.set('page', currentPage.toString());
+    params.set('page', searchState.page.toString());
     params.set('limit', searchState.limit.toString());
     params.set('sfw', searchState.sfw.toString());
     if (searchState.genres.length > 0) params.set('genres', searchState.genres.join(','));
@@ -75,12 +84,12 @@ const SearchPage = () => {
     if (searchState.yearMax) params.set('yearMax', searchState.yearMax.toString());
     if (searchState.scoreMin !== null) params.set('scoreMin', searchState.scoreMin.toString());
     setSearchParams(params, { replace: true });
-  }, [searchState, currentPage, setSearchParams]);
+  }, [searchState, setSearchParams]);
 
   const queryParams = useMemo(() => {
     const params: any = {
       q: searchState.query,
-      page: currentPage,
+      page: searchState.page,
       limit: searchState.limit,
       sfw: searchState.sfw,
     };
@@ -101,28 +110,35 @@ const SearchPage = () => {
       params.min_score = searchState.scoreMin;
     }
     
+    // Debug: log the params being sent to the API
+    if (searchState.genres.length > 0) {
+      console.log('[SearchPage] API Params:', params);
+    }
+    
     return params;
-  }, [searchState, currentPage]);
+  }, [searchState]);
 
   const { data, error, isLoading, isFetching } = useSearchAnimeQuery(queryParams);
 
   // Append new data to accumulated anime
   useEffect(() => {
     if (data?.data && !isLoading) {
+      console.log('[SearchPage] Received data:', { dataLength: data.data.length, hasMore: data.pagination?.has_next_page });
       setAllAnime(prev => {
-        if (currentPage === 1) return data.data;
+        if (searchState.page === 1) return data.data;
         const existingIds = new Set(prev.map(a => a.mal_id));
         const newAnime = data.data.filter(a => !existingIds.has(a.mal_id));
         return [...prev, ...newAnime];
       });
     }
-  }, [data, currentPage, isLoading]);
+  }, [data, searchState.page, isLoading]);
 
   const hasMore = data?.pagination?.has_next_page || false;
 
   const handleLoadMore = () => {
     if (!isFetching && hasMore) {
-      setCurrentPage(prev => prev + 1);
+      // advance the Redux page so queryParams (which read from searchState.page) update
+      dispatch(setPage(searchState.page + 1));
     }
   };
 
@@ -144,6 +160,12 @@ const SearchPage = () => {
             <p className="text-muted-foreground mb-4 max-w-md">
               {(error as any)?.data?.message || 'Failed to fetch anime data. Please try again.'}
             </p>
+            {/* Debug info */}
+            {(error as any) && (
+              <pre className="bg-muted p-2 rounded text-xs text-left max-w-md overflow-auto mb-4">
+                {JSON.stringify(error, null, 2)}
+              </pre>
+            )}
             <Button onClick={() => window.location.reload()}>
               Try Again
             </Button>
@@ -152,7 +174,7 @@ const SearchPage = () => {
         
         {isLoading && allAnime.length === 0 ? (
           <SkeletonGrid />
-        ) : allAnime.length === 0 && !isLoading ? (
+        ) : allAnime.length === 0 && !isLoading && !isFetching ? (
           <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
             <SearchIcon className="h-20 w-20 text-muted-foreground mb-4 opacity-50" />
             <h3 className="text-2xl font-semibold mb-2">No Results Found</h3>
