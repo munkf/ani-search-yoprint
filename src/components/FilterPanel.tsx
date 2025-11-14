@@ -94,6 +94,7 @@ export const FilterPanel = ({ open, onOpenChange }: FilterPanelProps) => {
   const minYear = 1960;
 
   const handleGenreChange = (genreId: number) => {
+    console.log('Genre change triggered:', genreId);
     const newGenres = genres.includes(genreId)
       ? genres.filter(id => id !== genreId)
       : [...genres, genreId];
@@ -101,14 +102,17 @@ export const FilterPanel = ({ open, onOpenChange }: FilterPanelProps) => {
   };
 
   const handleYearChange = (values: number[]) => {
+    console.log('Year change triggered:', values);
     dispatch(setYearRange({ min: values[0], max: values[1] }));
   };
 
   const handleEpisodesChange = (values: number[]) => {
+    console.log('Episodes change triggered:', values);
     dispatch(setEpisodesRange({ min: values[0], max: values[1] }));
   };
 
   const handleDurationChange = (values: number[]) => {
+    console.log('Duration change triggered:', values);
     dispatch(setDurationRange({ min: values[0], max: values[1] }));
   };
 

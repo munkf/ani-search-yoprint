@@ -86,4 +86,11 @@ export interface SearchParams {
   start_date?: string;
   end_date?: string;
   min_score?: number;
+  season?: string;
+  format?: string;
+  status?: string;
+  source?: string;
+  episodes?: string;
+  duration?: string;
+  rating?: string;
 }

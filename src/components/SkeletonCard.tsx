@@ -3,14 +3,14 @@ import { Card } from '@/components/ui/card';
 
 export const SkeletonCard = () => {
   return (
-    <Card className="overflow-hidden bg-card border-border h-full">
-      <Skeleton className="w-full aspect-[3/4]" />
+    <Card className="overflow-hidden bg-card border-border h-full shimmer">
+      <Skeleton className="w-full aspect-[3/4] shimmer" />
       <div className="p-4 space-y-2">
-        <Skeleton className="h-4 w-3/4" />
-        <Skeleton className="h-4 w-1/2" />
+        <Skeleton className="h-4 w-3/4 shimmer" />
+        <Skeleton className="h-4 w-1/2 shimmer" />
         <div className="flex items-center justify-between">
-          <Skeleton className="h-6 w-16" />
-          <Skeleton className="h-4 w-12" />
+          <Skeleton className="h-6 w-16 shimmer" />
+          <Skeleton className="h-4 w-12 shimmer" />
         </div>
       </div>
     </Card>

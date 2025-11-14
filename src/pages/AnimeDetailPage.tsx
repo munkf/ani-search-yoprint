@@ -69,11 +69,16 @@ const AnimeDetailPage = () => {
             />
           </Card>
           
-          {anime.trailer?.embed_url && (
+          {anime.trailer && (anime.trailer.url || anime.trailer.youtube_id) && (
             <Button
               variant="default"
               className="w-full gap-2"
-              onClick={() => window.open(anime.trailer.url || '', '_blank')}
+              onClick={() => {
+                const trailerUrl = anime.trailer.url || (anime.trailer.youtube_id ? `https://www.youtube.com/watch?v=${anime.trailer.youtube_id}` : '');
+                if (trailerUrl) {
+                  window.open(trailerUrl, '_blank');
+                }
+              }}
             >
               <Play className="h-4 w-4" />
               Watch Trailer

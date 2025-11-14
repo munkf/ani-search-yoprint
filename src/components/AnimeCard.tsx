@@ -24,7 +24,7 @@ export const AnimeCard = ({ anime }: AnimeCardProps) => {
 
   return (
     <Link to={`/anime/${anime.mal_id}`}>
-      <Card className="overflow-hidden group cursor-pointer card-hover bg-card border-border h-full">
+      <Card className="overflow-hidden group cursor-pointer card-hover bg-card border-border h-full transition-all duration-300 hover:shadow-2xl hover:shadow-primary/20">
         <div className="relative aspect-[3/4] overflow-hidden">
           <img
             src={imageUrl}
@@ -35,7 +35,7 @@ export const AnimeCard = ({ anime }: AnimeCardProps) => {
           <div className="absolute inset-0 gradient-overlay opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           <div className="absolute top-2 right-2 flex items-center gap-2">
             {anime.score && (
-              <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-1 rounded-full text-sm font-semibold">
+              <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-1 rounded-full text-sm font-semibold glow-pulse">
                 <Star className="h-3 w-3 fill-primary text-primary" />
                 <span>{anime.score.toFixed(1)}</span>
               </div>
@@ -44,18 +44,18 @@ export const AnimeCard = ({ anime }: AnimeCardProps) => {
           <Button
             variant="ghost"
             size="sm"
-            className="absolute top-2 left-2 h-8 w-8 p-0 bg-background/90 backdrop-blur-sm hover:bg-background/80 opacity-0 group-hover:opacity-100 transition-opacity"
+            className="absolute top-2 left-2 h-8 w-8 p-0 bg-background/90 backdrop-blur-sm hover:bg-background/80 opacity-0 group-hover:opacity-100 transition-all duration-300 pulse-ring"
             onClick={handleFavoriteClick}
           >
-            <Heart className={`h-4 w-4 ${isFavorite ? 'fill-primary text-primary' : 'text-muted-foreground'}`} />
+            <Heart className={`h-4 w-4 transition-all ${isFavorite ? 'fill-primary text-primary scale-110' : 'text-muted-foreground'}`} />
           </Button>
         </div>
         <div className="p-4 space-y-2">
-          <h3 className="font-semibold line-clamp-2 text-foreground group-hover:text-primary transition-colors">
+          <h3 className="font-semibold line-clamp-2 text-foreground group-hover:text-primary transition-colors duration-300">
             {anime.title}
           </h3>
           <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <span className="px-2 py-0.5 bg-primary/10 text-primary rounded text-xs font-medium">
+            <span className="px-2 py-0.5 bg-primary/10 text-primary rounded text-xs font-medium group-hover:bg-primary/20 transition-colors">
               {anime.type || 'Unknown'}
             </span>
             {anime.year && (

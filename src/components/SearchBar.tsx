@@ -3,7 +3,16 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Search, X, Filter, Shield, ShieldOff } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { setQuery, selectSearchState, toggleSfw } from '@/features/search/searchSlice';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { setQuery, selectSearchState, setSfw } from '@/features/search/searchSlice';
 import { useDebounce } from '@/hooks/useDebounce';
 import { FilterPanel } from '@/components/FilterPanel';
 
@@ -18,6 +27,7 @@ export const SearchBar = ({ variant = 'default' }: SearchBarProps) => {
   const { query, sfw } = useSelector(selectSearchState);
   const [inputValue, setInputValue] = useState(query);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isAgeDialogOpen, setIsAgeDialogOpen] = useState(false);
   const debouncedValue = useDebounce(inputValue, 400);
 
   useEffect(() => {
@@ -31,6 +41,21 @@ export const SearchBar = ({ variant = 'default' }: SearchBarProps) => {
     dispatch(setQuery(''));
   };
 
+  const handleSfwToggle = () => {
+    // If currently in safe mode and trying to turn on unsafe mode, show dialog
+    if (sfw) {
+      setIsAgeDialogOpen(true);
+    } else {
+      // If already in unsafe mode, just toggle back to safe
+      dispatch(setSfw(true));
+    }
+  };
+
+  const handleConfirmAge = () => {
+    dispatch(setSfw(false));
+    setIsAgeDialogOpen(false);
+  };
+
   // Hero variant (banner search)
   if (variant === 'hero') {
     return (
@@ -40,13 +65,13 @@ export const SearchBar = ({ variant = 'default' }: SearchBarProps) => {
             {/* Search Input */}
             <div className="w-full max-w-2xl">
               <div className="relative group">
-                <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-white/50 group-focus-within:text-white/80 transition-colors" />
+                <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-white/50 group-focus-within:text-primary transition-colors" />
                 <Input
                   type="text"
-                  placeholder=""
+                  placeholder="Search for anime..."
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
-                  className="w-full pl-14 pr-12 h-16 bg-white/5 border border-white/10 text-white placeholder:text-white/40 rounded-xl backdrop-blur-sm shadow-2xl focus-visible:ring-0 focus-visible:border-white/30 transition-all hover:bg-white/8 text-lg"
+                  className="w-full pl-14 pr-12 h-16 bg-white/5 border border-white/10 text-white placeholder:text-white/40 rounded-xl backdrop-blur-sm shadow-2xl focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary transition-all hover:bg-white/8 hover:border-white/20 text-lg glow-pulse"
                 />
                 {inputValue && (
                   <Button
@@ -65,18 +90,18 @@ export const SearchBar = ({ variant = 'default' }: SearchBarProps) => {
             <div className="flex gap-3 items-center justify-center flex-wrap">
               <Button
                 onClick={() => setIsFilterOpen(true)}
-                className="gap-2 h-12 px-6 text-base bg-primary hover:bg-primary/90 text-white rounded-lg font-medium shadow-lg transition-all hover:shadow-xl"
+                className="gap-2 h-12 px-6 text-base bg-primary hover:bg-primary/90 text-white rounded-lg font-medium shadow-lg transition-all hover:shadow-xl hover:shadow-primary/50 glow-pulse"
               >
                 <Filter className="h-5 w-5" />
                 <span>Filters</span>
               </Button>
 
               <Button
-                onClick={() => dispatch(toggleSfw())}
+                onClick={handleSfwToggle}
                 className={`gap-2 h-12 px-6 text-base rounded-lg font-medium transition-all ${
                   sfw
-                    ? 'bg-white/10 hover:bg-white/20 text-white border border-white/20'
-                    : 'bg-primary hover:bg-primary/90 text-white'
+                    ? 'bg-white/10 hover:bg-white/20 text-white border border-white/20 hover:border-white/40'
+                    : 'bg-primary hover:bg-primary/90 text-white glow-pulse hover:shadow-lg hover:shadow-primary/50'
                 }`}
               >
                 {sfw ? (
@@ -96,6 +121,23 @@ export const SearchBar = ({ variant = 'default' }: SearchBarProps) => {
         </div>
 
         <FilterPanel open={isFilterOpen} onOpenChange={setIsFilterOpen} />
+
+        <AlertDialog open={isAgeDialogOpen} onOpenChange={setIsAgeDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Age Verification Required</AlertDialogTitle>
+              <AlertDialogDescription>
+                The 18+ mode displays mature anime content. By clicking "I Confirm", you certify that you are 18 years old or older.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="flex gap-3 justify-end">
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleConfirmAge}>
+                I Confirm, I am 18+
+              </AlertDialogAction>
+            </div>
+          </AlertDialogContent>
+        </AlertDialog>
       </>
     );
   }
@@ -127,6 +169,23 @@ export const SearchBar = ({ variant = 'default' }: SearchBarProps) => {
       </div>
 
       <FilterPanel open={isFilterOpen} onOpenChange={setIsFilterOpen} />
+
+      <AlertDialog open={isAgeDialogOpen} onOpenChange={setIsAgeDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Age Verification Required</AlertDialogTitle>
+            <AlertDialogDescription>
+              The 18+ mode displays mature anime content. By clicking "I Confirm", you certify that you are 18 years old or older.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="flex gap-3 justify-end">
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmAge}>
+              I Confirm, I am 18+
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };

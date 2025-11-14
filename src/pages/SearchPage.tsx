@@ -109,11 +109,41 @@ const SearchPage = () => {
     if (searchState.scoreMin !== null) {
       params.min_score = searchState.scoreMin;
     }
+
+    if (searchState.season) {
+      params.season = searchState.season;
+    }
+
+    if (searchState.format) {
+      params.format = searchState.format;
+    }
+
+    if (searchState.airingStatus) {
+      params.status = searchState.airingStatus;
+    }
+
+    if (searchState.sourceMaterial) {
+      params.source = searchState.sourceMaterial;
+    }
+
+    if (searchState.episodesMin) {
+      params.episodes = `${searchState.episodesMin}-`;
+    } else if (searchState.episodesMax) {
+      params.episodes = `-${searchState.episodesMax}`;
+    } else if (searchState.episodesMin && searchState.episodesMax) {
+      params.episodes = `${searchState.episodesMin}-${searchState.episodesMax}`;
+    }
+
+    if (searchState.durationMin) {
+      params.duration = `${searchState.durationMin}-`;
+    } else if (searchState.durationMax) {
+      params.duration = `-${searchState.durationMax}`;
+    } else if (searchState.durationMin && searchState.durationMax) {
+      params.duration = `${searchState.durationMin}-${searchState.durationMax}`;
+    }
     
     // Debug: log the params being sent to the API
-    if (searchState.genres.length > 0) {
-      console.log('[SearchPage] API Params:', params);
-    }
+    console.log('[SearchPage] API Params:', params);
     
     return params;
   }, [searchState]);
