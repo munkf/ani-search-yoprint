@@ -63,7 +63,7 @@ export const SearchBar = ({ variant = 'default' }: SearchBarProps) => {
         <div className="w-full space-y-8" data-search-bar>
           <div className="flex flex-col gap-6 items-center justify-center">
             {/* Search Input */}
-            <div className="w-full max-w-2xl">
+            <div className="w-full max-w-md sm:max-w-2xl mx-auto px-4">
               <div className="relative group">
                 <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-white/50 group-focus-within:text-primary transition-colors" />
                 <Input

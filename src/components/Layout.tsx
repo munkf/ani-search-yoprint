@@ -19,7 +19,7 @@ export const Layout = ({ children }: LayoutProps) => {
           <div className="flex items-center justify-between">
             <Link to="/search" className="flex items-center gap-3 w-fit hover:opacity-80 transition-all duration-300 group">
               <img src="/anisearch-logo.svg" alt="AniSearch" className="h-10 w-10 group-hover:scale-110 transition-transform duration-300" />
-              <span className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent group-hover:from-primary/80 group-hover:to-primary/60 transition-all">
+              <span className="font-display text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent group-hover:from-primary/80 group-hover:to-primary/60 transition-all">
                 AniSearch
               </span>
             </Link>
