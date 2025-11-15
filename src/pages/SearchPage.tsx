@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useSearchParams } from 'react-router-dom';
 import { AlertCircle, Search as SearchIcon, Loader2 } from 'lucide-react';
 import { Banner } from '@/components/Banner';
+import { FilterPanel, FilterPanelContext } from '@/components/FilterPanel';
 import { AnimeGrid } from '@/components/AnimeGrid';
 import { SkeletonGrid } from '@/components/SkeletonCard';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,7 @@ const SearchPage = () => {
   const searchState = useSelector(selectSearchState);
   const [allAnime, setAllAnime] = useState<Anime[]>([]);
   const hasInitialized = useRef(false);
+  const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   
   // Sync URL params with Redux state on mount only (one time)
   useEffect(() => {
@@ -179,68 +181,83 @@ const SearchPage = () => {
   });
 
   return (
-    <div className="space-y-12">
-      <Banner />
+    <FilterPanelContext.Provider value={{ isOpen: filterPanelOpen, setIsOpen: setFilterPanelOpen }}>
+      <div className="space-y-8">
+        <Banner />
 
-      <section id="browse-section" className="space-y-6">
-        {error && (
-          <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-            <AlertCircle className="h-16 w-16 text-destructive mb-4" />
-            <h3 className="text-xl font-semibold mb-2">Something went wrong</h3>
-            <p className="text-muted-foreground mb-4 max-w-md">
-              {(error as any)?.data?.message || 'Failed to fetch anime data. Please try again.'}
-            </p>
-            {/* Debug info */}
-            {(error as any) && (
-              <pre className="bg-muted p-2 rounded text-xs text-left max-w-md overflow-auto mb-4">
-                {JSON.stringify(error, null, 2)}
-              </pre>
-            )}
-            <Button onClick={() => window.location.reload()}>
-              Try Again
+        <section id="browse-section" className="space-y-6">
+          {/* Filter and Safe buttons above inline filter panel */}
+          <div className="flex flex-col gap-3 w-full max-w-sm">
+            <Button
+              onClick={() => setFilterPanelOpen(!filterPanelOpen)}
+              className="w-full h-12 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-lg shadow-lg transition-all"
+            >
+              {filterPanelOpen ? 'Hide filters' : 'Show filters'}
             </Button>
           </div>
-        )}
-        
-        {isLoading && allAnime.length === 0 ? (
-          <SkeletonGrid />
-        ) : allAnime.length === 0 && !isLoading && !isFetching ? (
-          <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
-            <SearchIcon className="h-20 w-20 text-muted-foreground mb-4 opacity-50" />
-            <h3 className="text-2xl font-semibold mb-2">No Results Found</h3>
-            <p className="text-muted-foreground max-w-md">
-              {searchState.query 
-                ? `No anime found matching "${searchState.query}". Try a different search term.`
-                : 'Start searching for your favorite anime!'}
-            </p>
-          </div>
-        ) : allAnime.length > 0 ? (
-          <>
-            {data?.pagination && (
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-sm text-muted-foreground">
-                  Showing {allAnime.length.toLocaleString()} of {data.pagination.items.total.toLocaleString()} results
-                </p>
-              </div>
-            )}
-            <AnimeGrid anime={allAnime} />
-            
-            {/* Infinite scroll trigger */}
-            <div ref={observerTarget} className="py-8 flex justify-center">
-              {isFetching && (
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  <span>Loading more...</span>
+
+          {/* Inline filter panel */}
+          <FilterPanel />
+
+          {error && (
+            <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+              <AlertCircle className="h-16 w-16 text-destructive mb-4" />
+              <h3 className="text-xl font-semibold mb-2">Something went wrong</h3>
+              <p className="text-muted-foreground mb-4 max-w-md">
+                {(error as any)?.data?.message || 'Failed to fetch anime data. Please try again.'}
+              </p>
+              {/* Debug info */}
+              {(error as any) && (
+                <pre className="bg-muted p-2 rounded text-xs text-left max-w-md overflow-auto mb-4">
+                  {JSON.stringify(error, null, 2)}
+                </pre>
+              )}
+              <Button onClick={() => window.location.reload()}>
+                Try Again
+              </Button>
+            </div>
+          )}
+          
+          {isLoading && allAnime.length === 0 ? (
+            <SkeletonGrid />
+          ) : allAnime.length === 0 && !isLoading && !isFetching ? (
+            <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
+              <SearchIcon className="h-20 w-20 text-muted-foreground mb-4 opacity-50" />
+              <h3 className="text-2xl font-semibold mb-2">No Results Found</h3>
+              <p className="text-muted-foreground max-w-md">
+                {searchState.query 
+                  ? `No anime found matching "${searchState.query}". Try a different search term.`
+                  : 'Start searching for your favorite anime!'}
+              </p>
+            </div>
+          ) : allAnime.length > 0 ? (
+            <>
+              {data?.pagination && (
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-sm text-muted-foreground">
+                    Showing {allAnime.length.toLocaleString()} of {data.pagination.items.total.toLocaleString()} results
+                  </p>
                 </div>
               )}
-              {!hasMore && allAnime.length > 0 && (
-                <p className="text-sm text-muted-foreground">No more results</p>
-              )}
-            </div>
-          </>
-        ) : null}
-      </section>
-    </div>
+              <AnimeGrid anime={allAnime} />
+              
+              {/* Infinite scroll trigger */}
+              <div ref={observerTarget} className="py-8 flex justify-center">
+                {isFetching && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span>Loading more...</span>
+                  </div>
+                )}
+                {!hasMore && allAnime.length > 0 && (
+                  <p className="text-sm text-muted-foreground">No more results</p>
+                )}
+              </div>
+            </>
+          ) : null}
+        </section>
+      </div>
+    </FilterPanelContext.Provider>
   );
 };
 

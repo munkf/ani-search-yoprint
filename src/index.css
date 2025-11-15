@@ -48,6 +48,12 @@ All colors MUST be HSL.
     /* Font tokens */
     --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
     --font-display: 'Space Grotesk', var(--font-sans);
+    /* Chip and accent tokens */
+    --chip-border: 220 14% 18%;
+    --chip-muted: 220 9% 70%;
+    --accent-yellow: 44 95% 55%; /* #FFD54A-ish */
+    --sfw-purple: 263 68% 56%; /* #8B5CF6-ish */
+    --chip-bg-active: 22 90% 45%; /* primary fallback (orange) */
   }
 }
 
@@ -65,6 +71,33 @@ All colors MUST be HSL.
 @layer utilities {
   .card-hover {
     @apply transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-primary/20;
+  }
+
+  .chip {
+    @apply inline-flex items-center justify-center gap-2 px-3 py-1 rounded-full text-sm border;
+    border-color: hsl(var(--chip-border));
+    color: hsl(var(--muted-foreground));
+    background: transparent;
+  }
+
+  .chip-active {
+    @apply text-white;
+    background: hsl(var(--chip-bg-active));
+    border-color: hsl(var(--chip-bg-active));
+  }
+
+  .sfw-pill {
+    background: hsl(var(--sfw-purple));
+    color: white;
+    border-radius: 9999px;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.875rem;
+  }
+
+  .hide-filters {
+    border: 1px solid hsl(var(--accent-yellow));
+    color: hsl(var(--accent-yellow));
+    background: transparent;
   }
 
   .gradient-overlay {

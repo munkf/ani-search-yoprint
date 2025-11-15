@@ -59,10 +59,10 @@ export const Banner = () => {
       <div className="relative z-10 flex flex-col items-center justify-center h-full px-4 sm:px-6 text-center py-12 sm:py-16">
         <div className="w-full max-w-xl sm:max-w-3xl mx-auto bg-card/40 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-0 rounded-2xl sm:rounded-none p-4 sm:p-0">
           <span className="uppercase tracking-widest text-xs md:text-sm text-white/60 mb-3 fade-in-up" style={{ animationDelay: '0.1s' }}>Discover Anime</span>
-          <h1 className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 drop-shadow-2xl max-w-3xl sm:max-w-4xl leading-tight fade-in-up" style={{ animationDelay: '0.2s' }}>
+          <h1 className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-4 drop-shadow-2xl max-w-3xl sm:max-w-4xl leading-tight fade-in-up" style={{ animationDelay: '0.2s' }}>
               Streamlined <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent animate-pulse">Anime</span> Discovery for Every Fan
             </h1>
-          <p className="text-sm sm:text-base md:text-lg text-white/80 mb-8 sm:mb-10 max-w-xl sm:max-w-2xl fade-in-up" style={{ animationDelay: '0.3s' }}>
+          <p className="text-base sm:text-lg md:text-lg text-white/90 mb-8 sm:mb-10 max-w-xl sm:max-w-2xl fade-in-up" style={{ animationDelay: '0.3s' }}>
             Search, filter, and keep track of your favorite shows with lightning-fast results powered by the Jikan API.
           </p>
           <div className="w-full max-w-lg sm:max-w-3xl fade-in-up mx-auto" style={{ animationDelay: '0.4s' }}>

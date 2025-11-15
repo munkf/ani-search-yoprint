@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Search, X, Filter, Shield, ShieldOff } from 'lucide-react';
+import { Search, X, Shield, ShieldOff } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,7 +14,6 @@ import {
 } from '@/components/ui/alert-dialog';
 import { setQuery, selectSearchState, setSfw } from '@/features/search/searchSlice';
 import { useDebounce } from '@/hooks/useDebounce';
-import { FilterPanel } from '@/components/FilterPanel';
 
 type SearchBarVariant = 'default' | 'hero';
 
@@ -26,7 +25,6 @@ export const SearchBar = ({ variant = 'default' }: SearchBarProps) => {
   const dispatch = useDispatch();
   const { query, sfw } = useSelector(selectSearchState);
   const [inputValue, setInputValue] = useState(query);
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isAgeDialogOpen, setIsAgeDialogOpen] = useState(false);
   const debouncedValue = useDebounce(inputValue, 400);
 
@@ -71,7 +69,7 @@ export const SearchBar = ({ variant = 'default' }: SearchBarProps) => {
                   placeholder="Search for anime..."
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
-                  className="w-full pl-14 pr-12 h-16 bg-white/5 border border-white/10 text-white placeholder:text-white/40 rounded-xl backdrop-blur-sm shadow-2xl focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary transition-all hover:bg-white/8 hover:border-white/20 text-lg glow-pulse"
+                  className="w-full pl-14 pr-12 h-14 sm:h-16 bg-white/10 sm:bg-white/5 border border-white/12 sm:border-white/10 text-white placeholder:text-white/70 sm:placeholder:text-white/40 rounded-xl backdrop-blur-sm shadow-2xl focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary transition-all hover:bg-white/8 hover:border-white/20 text-base sm:text-lg glow-pulse"
                 />
                 {inputValue && (
                   <Button
@@ -87,22 +85,14 @@ export const SearchBar = ({ variant = 'default' }: SearchBarProps) => {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-3 items-center justify-center flex-wrap">
-              <Button
-                onClick={() => setIsFilterOpen(true)}
-                className="gap-2 h-12 px-6 text-base bg-primary hover:bg-primary/90 text-white rounded-lg font-medium shadow-lg transition-all hover:shadow-xl hover:shadow-primary/50 glow-pulse"
-              >
-                <Filter className="h-5 w-5" />
-                <span>Filters</span>
-              </Button>
-
+            <div className="flex gap-3 items-center justify-center flex-col sm:flex-row sm:items-center sm:justify-center w-full">
               <Button
                 onClick={handleSfwToggle}
-                className={`gap-2 h-12 px-6 text-base rounded-lg font-medium transition-all ${
+                className={`w-full sm:w-auto gap-2 h-12 sm:h-12 px-6 py-4 sm:py-3 text-base rounded-lg font-medium transition-all ${
                   sfw
                     ? 'bg-white/10 hover:bg-white/20 text-white border border-white/20 hover:border-white/40'
                     : 'bg-primary hover:bg-primary/90 text-white glow-pulse hover:shadow-lg hover:shadow-primary/50'
-                }`}
+                } mt-3 sm:mt-0`}
               >
                 {sfw ? (
                   <>
@@ -119,8 +109,6 @@ export const SearchBar = ({ variant = 'default' }: SearchBarProps) => {
             </div>
           </div>
         </div>
-
-        <FilterPanel open={isFilterOpen} onOpenChange={setIsFilterOpen} />
 
         <AlertDialog open={isAgeDialogOpen} onOpenChange={setIsAgeDialogOpen}>
           <AlertDialogContent>
@@ -167,8 +155,6 @@ export const SearchBar = ({ variant = 'default' }: SearchBarProps) => {
           )}
         </div>
       </div>
-
-      <FilterPanel open={isFilterOpen} onOpenChange={setIsFilterOpen} />
 
       <AlertDialog open={isAgeDialogOpen} onOpenChange={setIsAgeDialogOpen}>
         <AlertDialogContent>

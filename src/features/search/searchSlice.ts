@@ -10,6 +10,7 @@ interface SearchState {
   yearMin: number | null;
   yearMax: number | null;
   scoreMin: number | null;
+  rating: string | null;
   season: string | null;
   format: string | null;
   airingStatus: string | null;
@@ -32,6 +33,7 @@ const initialState: SearchState = {
   yearMin: null,
   yearMax: null,
   scoreMin: null,
+  rating: null,
   season: null,
   format: null,
   airingStatus: null,
@@ -79,6 +81,10 @@ const searchSlice = createSlice({
     },
     setScoreMin: (state, action: PayloadAction<number | null>) => {
       state.scoreMin = action.payload;
+      state.page = 1;
+    },
+    setRating: (state, action: PayloadAction<string | null>) => {
+      state.rating = action.payload;
       state.page = 1;
     },
     setSeason: (state, action: PayloadAction<string | null>) => {
@@ -161,6 +167,7 @@ export const {
   setEpisodesRange,
   setDurationRange,
   setDoujin,
+  setRating,
   resetSearch 
 } = searchSlice.actions;
 

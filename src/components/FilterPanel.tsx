@@ -1,18 +1,17 @@
-import { useState } from 'react';
+import { useState, createContext, useContext } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { ChevronRight, X } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Slider } from '@/components/ui/slider';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from '@/components/ui/sheet';
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import {
   Select,
   SelectContent,
@@ -23,17 +22,24 @@ import {
 import {
   selectSearchState,
   setGenres,
-  setYearRange,
-  setSeason,
   setFormat,
   setAiringStatus,
-  setStreamingOn,
-  setCountryOfOrigin,
-  setSourceMaterial,
-  setEpisodesRange,
-  setDurationRange,
-  setDoujin,
+  setSfw,
+  setRating,
 } from '@/features/search/searchSlice';
+
+export const FilterPanelContext = createContext<{
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
+} | null>(null);
+
+export const useFilterPanel = () => {
+  const context = useContext(FilterPanelContext);
+  if (!context) {
+    throw new Error('useFilterPanel must be used within FilterPanelProvider');
+  }
+  return context;
+};
 
 const GENRES = [
   { id: 1, name: 'Action' },
@@ -48,433 +54,328 @@ const GENRES = [
   { id: 36, name: 'Slice of Life' },
   { id: 30, name: 'Sports' },
   { id: 37, name: 'Supernatural' },
-  { id: 41, name: 'Thriller' },
 ];
 
-const YEARS = Array.from({ length: new Date().getFullYear() - 1959 }, (_, i) => 1960 + i).reverse();
+const AIRING_STATUS = ['Airing', 'Upcoming', 'Complete'];
 
-const SEASONS = ['Winter', 'Spring', 'Summer', 'Fall'];
+const ORDER_OPTIONS = ['Score', 'Title', 'Episodes', 'Status', 'Start Date', 'Mean Score', 'Aired'];
 
-const FORMATS = ['TV', 'TV Short', 'Movie', 'Special', 'OVA', 'ONA', 'Music'];
-
-const AIRING_STATUS = ['Airing', 'Complete', 'Upcoming'];
-
-const STREAMING_PLATFORMS = ['Crunchyroll', 'Funimation', 'Netflix', 'Hulu', 'Amazon Prime', 'Disney+', 'HIDIVE'];
-
-const COUNTRIES = ['Japan', 'South Korea', 'China', 'United States'];
-
-const SOURCE_MATERIAL = ['Manga', 'Light Novel', 'Original', 'Visual Novel', 'Game', 'Novel', 'Other'];
+const SORT_OPTIONS = ['Desc', 'Asc'];
 
 interface FilterPanelProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  // No longer used; component manages its own open state
 }
 
-export const FilterPanel = ({ open, onOpenChange }: FilterPanelProps) => {
+export const FilterPanel = ({}: FilterPanelProps) => {
   const dispatch = useDispatch();
-  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
+  const filterContext = useContext(FilterPanelContext);
+  const [localOpen, setLocalOpen] = useState(false);
+  
+  // Use context if available, otherwise use local state
+  const isOpen = filterContext?.isOpen ?? localOpen;
+  const setIsOpen = filterContext?.setIsOpen ?? setLocalOpen;
+  
+  const [orderBy, setOrderBy] = useState('Score');
+  const [sortBy, setSortByState] = useState('Desc');
+  const [yearInput, setYearInput] = useState<string>('');
+  const [scoreMin, setScoreMin] = useState<string>('');
+  const [scoreMax, setScoreMax] = useState<string>('');
+  
   const {
     genres,
-    yearMin,
-    yearMax,
-    season,
     format,
     airingStatus,
-    streamingOn,
-    countryOfOrigin,
-    sourceMaterial,
-    episodesMin,
-    episodesMax,
-    durationMin,
-    durationMax,
-    doujin,
+    sfw,
+    rating,
   } = useSelector(selectSearchState);
-
-  const currentYear = new Date().getFullYear();
-  const minYear = 1960;
+  const [isAgeDialogOpen, setIsAgeDialogOpen] = useState(false);
 
   const handleGenreChange = (genreId: number) => {
-    console.log('Genre change triggered:', genreId);
     const newGenres = genres.includes(genreId)
       ? genres.filter(id => id !== genreId)
       : [...genres, genreId];
     dispatch(setGenres(newGenres));
   };
 
-  const handleYearChange = (values: number[]) => {
-    console.log('Year change triggered:', values);
-    dispatch(setYearRange({ min: values[0], max: values[1] }));
-  };
-
-  const handleEpisodesChange = (values: number[]) => {
-    console.log('Episodes change triggered:', values);
-    dispatch(setEpisodesRange({ min: values[0], max: values[1] }));
-  };
-
-  const handleDurationChange = (values: number[]) => {
-    console.log('Duration change triggered:', values);
-    dispatch(setDurationRange({ min: values[0], max: values[1] }));
-  };
-
-  const selectedGenreNames = genres.map(id => GENRES.find(g => g.id === id)?.name).filter(Boolean);
-
-  const hasActiveFilters = 
-    genres.length > 0 || 
-    yearMin !== null || 
-    season !== null || 
-    format !== null || 
-    airingStatus !== null || 
-    streamingOn !== null || 
-    countryOfOrigin !== null || 
-    sourceMaterial !== null || 
-    episodesMin !== null || 
-    episodesMax !== null || 
-    durationMin !== null || 
-    durationMax !== null || 
-    doujin;
-
   const clearAllFilters = () => {
     dispatch(setGenres([]));
-    dispatch(setYearRange({ min: null, max: null }));
-    dispatch(setSeason(null));
     dispatch(setFormat(null));
     dispatch(setAiringStatus(null));
-    dispatch(setStreamingOn(null));
-    dispatch(setCountryOfOrigin(null));
-    dispatch(setSourceMaterial(null));
-    dispatch(setEpisodesRange({ min: null, max: null }));
-    dispatch(setDurationRange({ min: null, max: null }));
-    dispatch(setDoujin(false));
+    dispatch(setRating(null));
+    dispatch(setSfw(true));
+    setYearInput('');
+    setScoreMin('');
+    setScoreMax('');
+    setOrderBy('Score');
+    setSortByState('Desc');
   };
 
+  const handleSfwToggle = () => {
+    if (sfw) {
+      setIsAgeDialogOpen(true);
+    } else {
+      dispatch(setSfw(true));
+    }
+  };
+
+  const handleConfirmAge = () => {
+    dispatch(setSfw(false));
+    setIsAgeDialogOpen(false);
+  };
+
+  // Store context in window for SearchPage to access
+  if (typeof window !== 'undefined') {
+    (window as any).__filterPanelState = {
+      isOpen,
+      setIsOpen,
+    };
+  }
+
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto">
-        <SheetHeader className="pb-4 border-b">
-          <div className="flex items-center justify-between">
-            <div>
-              <SheetTitle>Filters</SheetTitle>
-              <SheetDescription>
-                Refine your search with advanced filters
-              </SheetDescription>
-            </div>
-            {hasActiveFilters && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={clearAllFilters}
-                className="text-xs"
-              >
-                Clear All
-              </Button>
-            )}
-          </div>
-        </SheetHeader>
-
-        <div className="mt-6 space-y-6">
-          {/* Quick Filters Row */}
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-sm font-medium mb-2 block">Genres</Label>
-                <Select
-                  value={genres.length > 0 ? genres[0].toString() : 'any'}
-                  onValueChange={(value) => {
-                    if (value === 'any') {
-                      dispatch(setGenres([]));
-                    } else {
-                      const genreId = parseInt(value);
-                      if (genres.includes(genreId)) {
-                        dispatch(setGenres(genres.filter(id => id !== genreId)));
-                      } else {
-                        dispatch(setGenres([...genres, genreId]));
-                      }
-                    }
-                  }}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Any">
-                      {genres.length > 0 ? (genres.length === 1 ? selectedGenreNames[0] : `${genres.length} selected`) : 'Any'}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="any">Any</SelectItem>
-                    {GENRES.map((genre) => (
-                      <SelectItem key={genre.id} value={genre.id.toString()}>
-                        {genre.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label className="text-sm font-medium mb-2 block">Year</Label>
-                <Select
-                  value={yearMin?.toString() || 'any'}
-                  onValueChange={(value) => {
-                    if (value === 'any') {
-                      dispatch(setYearRange({ min: null, max: null }));
-                    } else {
-                      const year = parseInt(value);
-                      dispatch(setYearRange({ min: year, max: year }));
-                    }
-                  }}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Any">
-                      {yearMin ? yearMin.toString() : 'Any'}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="any">Any</SelectItem>
-                    {YEARS.map((year) => (
-                      <SelectItem key={year} value={year.toString()}>
-                        {year}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label className="text-sm font-medium mb-2 block">Season</Label>
-                <Select
-                  value={season || 'any'}
-                  onValueChange={(value) => dispatch(setSeason(value === 'any' ? null : value))}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Any">
-                      {season || 'Any'}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="any">Any</SelectItem>
-                    {SEASONS.map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {s}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label className="text-sm font-medium mb-2 block">Format</Label>
-                <Select
-                  value={format || 'any'}
-                  onValueChange={(value) => dispatch(setFormat(value === 'any' ? null : value))}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Any">
-                      {format || 'Any'}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="any">Any</SelectItem>
-                    {FORMATS.map((f) => (
-                      <SelectItem key={f} value={f}>
-                        {f}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-
-          {/* Additional Filters */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-foreground">Additional Filters</h3>
-            <div className="grid grid-cols-1 gap-4">
-              <div>
-                <Label className="text-sm font-medium mb-2 block">Airing Status</Label>
-                <Select
-                  value={airingStatus || 'any'}
-                  onValueChange={(value) => dispatch(setAiringStatus(value === 'any' ? null : value))}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Any">
-                      {airingStatus || 'Any'}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="any">Any</SelectItem>
-                    {AIRING_STATUS.map((status) => (
-                      <SelectItem key={status} value={status}>
-                        {status}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label className="text-sm font-medium mb-2 block">Streaming On</Label>
-                <Select
-                  value={streamingOn || 'any'}
-                  onValueChange={(value) => dispatch(setStreamingOn(value === 'any' ? null : value))}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Any">
-                      {streamingOn || 'Any'}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="any">Any</SelectItem>
-                    {STREAMING_PLATFORMS.map((platform) => (
-                      <SelectItem key={platform} value={platform}>
-                        {platform}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label className="text-sm font-medium mb-2 block">Country Of Origin</Label>
-                <Select
-                  value={countryOfOrigin || 'any'}
-                  onValueChange={(value) => dispatch(setCountryOfOrigin(value === 'any' ? null : value))}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Any">
-                      {countryOfOrigin || 'Any'}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="any">Any</SelectItem>
-                    {COUNTRIES.map((country) => (
-                      <SelectItem key={country} value={country}>
-                        {country}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label className="text-sm font-medium mb-2 block">Source Material</Label>
-                <Select
-                  value={sourceMaterial || 'any'}
-                  onValueChange={(value) => dispatch(setSourceMaterial(value === 'any' ? null : value))}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Any">
-                      {sourceMaterial || 'Any'}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="any">Any</SelectItem>
-                    {SOURCE_MATERIAL.map((source) => (
-                      <SelectItem key={source} value={source}>
-                        {source}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-
-          {/* Range Sliders */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-foreground">Range Filters</h3>
-            <div className="space-y-5">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <Label className="text-sm font-medium">Year Range</Label>
-                  <span className="text-xs text-muted-foreground">
-                    {yearMin || minYear} - {yearMax || currentYear}
-                  </span>
-                </div>
-                <Slider
-                  min={minYear}
-                  max={currentYear}
-                  step={1}
-                  value={[yearMin || minYear, yearMax || currentYear]}
-                  onValueChange={handleYearChange}
-                />
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <Label className="text-sm font-medium">Episodes</Label>
-                  <span className="text-xs text-muted-foreground">
-                    {episodesMin || 0} - {episodesMax || 1000}
-                  </span>
-                </div>
-                <Slider
-                  min={0}
-                  max={1000}
-                  step={1}
-                  value={[episodesMin || 0, episodesMax || 1000]}
-                  onValueChange={handleEpisodesChange}
-                />
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <Label className="text-sm font-medium">Duration (min)</Label>
-                  <span className="text-xs text-muted-foreground">
-                    {durationMin || 0} - {durationMax || 180}
-                  </span>
-                </div>
-                <Slider
-                  min={0}
-                  max={180}
-                  step={5}
-                  value={[durationMin || 0, durationMax || 180]}
-                  onValueChange={handleDurationChange}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Checkboxes */}
-          <div className="space-y-3">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="doujin"
-                checked={doujin}
-                onCheckedChange={(checked) => dispatch(setDoujin(checked as boolean))}
-              />
-              <Label htmlFor="doujin" className="text-sm cursor-pointer">
-                Doujin
-              </Label>
-            </div>
-          </div>
-
-          {/* Advanced Genres & Tag Filters */}
-          <Collapsible open={isAdvancedOpen} onOpenChange={setIsAdvancedOpen}>
-            <CollapsibleTrigger asChild>
-              <Button variant="ghost" className="w-full justify-between p-0 h-auto font-normal">
-                <span className="text-sm font-medium">Advanced Genres & Tag Filters</span>
-                <ChevronRight className={`h-4 w-4 text-muted-foreground transition-transform ${isAdvancedOpen ? 'rotate-90' : ''}`} />
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="pt-4 space-y-0 overflow-hidden data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0">
-              <div className="grid grid-cols-2 gap-3 pt-2">
-                {GENRES.map((genre) => (
-                  <div key={genre.id} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`genre-${genre.id}`}
-                      checked={genres.includes(genre.id)}
-                      onCheckedChange={() => handleGenreChange(genre.id)}
-                    />
-                    <Label
-                      htmlFor={`genre-${genre.id}`}
-                      className="text-sm cursor-pointer font-normal"
-                    >
-                      {genre.name}
-                    </Label>
-                  </div>
-                ))}
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
-        </div>
-      </SheetContent>
-    </Sheet>
+    <FilterPanelContent 
+      isOpen={isOpen} 
+      setIsOpen={setIsOpen}
+      genres={genres}
+      format={format}
+      airingStatus={airingStatus}
+      sfw={sfw}
+      rating={rating}
+      orderBy={orderBy}
+      setOrderBy={setOrderBy}
+      sortBy={sortBy}
+      setSortBy={setSortByState}
+      yearInput={yearInput}
+      setYearInput={setYearInput}
+      scoreMin={scoreMin}
+      setScoreMin={setScoreMin}
+      scoreMax={scoreMax}
+      setScoreMax={setScoreMax}
+      handleGenreChange={handleGenreChange}
+      clearAllFilters={clearAllFilters}
+      handleSfwToggle={handleSfwToggle}
+      isAgeDialogOpen={isAgeDialogOpen}
+      setIsAgeDialogOpen={setIsAgeDialogOpen}
+      handleConfirmAge={handleConfirmAge}
+    />
   );
 };
+
+interface FilterPanelContentProps {
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
+  genres: number[];
+  format: string | null;
+  airingStatus: string | null;
+  sfw: boolean;
+  rating: string | null;
+  orderBy: string;
+  setOrderBy: (order: string) => void;
+  sortBy: string;
+  setSortBy: (sort: string) => void;
+  yearInput: string;
+  setYearInput: (year: string) => void;
+  scoreMin: string;
+  setScoreMin: (score: string) => void;
+  scoreMax: string;
+  setScoreMax: (score: string) => void;
+  handleGenreChange: (genreId: number) => void;
+  clearAllFilters: () => void;
+  handleSfwToggle: () => void;
+  isAgeDialogOpen: boolean;
+  setIsAgeDialogOpen: (open: boolean) => void;
+  handleConfirmAge: () => void;
+}
+
+const FilterPanelContent = (props: FilterPanelContentProps) => {
+  const dispatch = useDispatch();
+  const {
+    isOpen,
+    setIsOpen,
+    genres,
+    format,
+    airingStatus,
+    sfw,
+    rating,
+    orderBy,
+    setOrderBy,
+    sortBy,
+    setSortBy,
+    yearInput,
+    setYearInput,
+    scoreMin,
+    setScoreMin,
+    scoreMax,
+    setScoreMax,
+    handleGenreChange,
+    clearAllFilters,
+    handleSfwToggle,
+    isAgeDialogOpen,
+    setIsAgeDialogOpen,
+    handleConfirmAge,
+  } = props;
+
+  return (
+    <div className="w-full space-y-4">
+      {/* Expandable filters container */}
+      {isOpen && (
+        <div className="bg-card border border-border rounded-lg p-6 space-y-6">
+          
+          {/* Type + Status row */}
+          <div>
+            <div className="flex items-center gap-2 flex-wrap mb-3">
+              <span className="text-sm font-medium">Type:</span>
+              {['TV','Movie','OVA'].map(t => (
+                <button
+                  key={t}
+                  onClick={() => dispatch(setFormat(format === t ? null : t))}
+                  className={`chip ${format === t ? 'chip-active' : ''}`}
+                  aria-pressed={format === t}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-sm font-medium">Status:</span>
+              {AIRING_STATUS.map(s => (
+                <button
+                  key={s}
+                  onClick={() => dispatch(setAiringStatus(airingStatus === s ? null : s))}
+                  className={`chip ${airingStatus === s ? 'chip-active' : ''}`}
+                  aria-pressed={airingStatus === s}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Rating + Score + Year + SFW row */}
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">Rating:</span>
+              <div className="flex items-center gap-2">
+                {['Any','G','PG','R','R18'].map((r) => {
+                  const isAny = r === 'Any';
+                  const active = isAny ? rating === null : rating === r;
+                  return (
+                    <button
+                      key={r}
+                      onClick={() => dispatch(setRating(isAny ? null : r))}
+                      className={`chip ${active ? 'chip-active' : ''}`}
+                      aria-pressed={active}
+                    >
+                      {r}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">Score:</span>
+              <input 
+                type="number" 
+                placeholder="Min" 
+                value={scoreMin}
+                onChange={(e) => setScoreMin(e.target.value)}
+                className="w-16 px-2 py-1 rounded-md bg-transparent border border-border text-sm" 
+              />
+              <input 
+                type="number" 
+                placeholder="Max" 
+                value={scoreMax}
+                onChange={(e) => setScoreMax(e.target.value)}
+                className="w-16 px-2 py-1 rounded-md bg-transparent border border-border text-sm" 
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">Year:</span>
+              <input 
+                type="text" 
+                placeholder="e.g. 2025" 
+                value={yearInput}
+                onChange={(e) => setYearInput(e.target.value)}
+                className="px-3 py-1 rounded-md bg-transparent border border-border text-sm w-28" 
+              />
+            </div>
+          </div>
+
+          {/* Order + Sort row */}
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">Order:</span>
+              <Select value={orderBy} onValueChange={setOrderBy}>
+                <SelectTrigger className="w-32">
+                  <SelectValue>{orderBy}</SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {ORDER_OPTIONS.map((opt) => (
+                    <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-24">
+                  <SelectValue>{sortBy}</SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {SORT_OPTIONS.map((opt) => (
+                    <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Genres section */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-foreground">Genres</h3>
+              {genres.length > 0 && (
+                <span className="text-xs text-muted-foreground">{genres.length} selected</span>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {GENRES.map((genre) => {
+                const active = genres.includes(genre.id);
+                return (
+                  <button 
+                    key={genre.id} 
+                    onClick={() => handleGenreChange(genre.id)} 
+                    className={`chip ${active ? 'chip-active' : ''}`} 
+                    aria-pressed={active}
+                  >
+                    {genre.name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+        </div>
+      )}
+
+      <AlertDialog open={isAgeDialogOpen} onOpenChange={setIsAgeDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Age Verification Required</AlertDialogTitle>
+            <AlertDialogDescription>
+              The 18+ mode displays mature anime content. By clicking "I Confirm", you certify that you are 18 years old or older.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="flex gap-3 justify-end">
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmAge}>I Confirm, I am 18+</AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+};
+
